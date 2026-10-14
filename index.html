@@ -18,16 +18,16 @@
 /* Carnet d'entraînement : une colonne mobile, cartes d'exercice avec 3 cases de série, minuteur en bas d'écran */
 :root{
   --bg:#EEF2F5; --surface:#FFFFFF; --ink:#13202B; --muted:#5B6B78; --line:#D5DDE4;
-  --accent:#1A5FD6; --accent-soft:#DCE7FB; --ok:#1E8A5A; --ok-soft:#DDF2E7; --warn:#B76A00;
+  --accent:#1A5FD6; --accent-soft:#DCE7FB; --ok:#1E8A5A; --ok-soft:#DDF2E7; --warn:#B76A00; --danger:#C2362B; --danger-soft:#FBE3E0;
   --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0E151C; --surface:#17212B; --ink:#E6EDF3; --muted:#93A3B1; --line:#2A3743;
-  --accent:#6C9BFF; --accent-soft:#1D2D4A; --ok:#4CC58C; --ok-soft:#173326; --warn:#E3A24A; color-scheme:dark}}
+  --accent:#6C9BFF; --accent-soft:#1D2D4A; --ok:#4CC58C; --ok-soft:#173326; --warn:#E3A24A; --danger:#F07267; --danger-soft:#3A1E1C; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0E151C; --surface:#17212B; --ink:#E6EDF3; --muted:#93A3B1; --line:#2A3743;
-  --accent:#6C9BFF; --accent-soft:#1D2D4A; --ok:#4CC58C; --ok-soft:#173326; --warn:#E3A24A; color-scheme:dark}
+  --accent:#6C9BFF; --accent-soft:#1D2D4A; --ok:#4CC58C; --ok-soft:#173326; --warn:#E3A24A; --danger:#F07267; --danger-soft:#3A1E1C; color-scheme:dark}
 html,body{background:var(--bg);color:var(--ink)}
 body{font-family:var(--body);font-size:16px;line-height:1.45}
 .wrap{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:calc(18px + env(safe-area-inset-top,0px)) 120px;display:flex;flex-direction:column;gap:18px}
@@ -83,6 +83,31 @@ td.cur{background:var(--accent-soft);color:var(--accent);font-weight:600;border-
 .timer .l{font-size:.85rem;opacity:.8}
 .timer .btn{background:transparent;color:var(--bg);border-color:currentColor}
 .saved{color:var(--ok);font-weight:600;text-align:center;margin:0}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field span{font-size:.8rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.field input,.field select,.field textarea,.edrow select{font:500 1rem var(--body);color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:8px;padding:10px;width:100%;min-width:0}
+.field textarea{resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus,.edrow select:focus{outline:none;border-color:var(--accent)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grid3 .field span{font-size:.72rem}
+.card.form{border-color:var(--accent)}
+.edrow{display:flex;flex-direction:column;gap:8px;padding-block:10px;border-top:1px solid var(--line)}
+.edrow .row{flex-wrap:nowrap}
+.edrow strong{min-width:0}
+.edrow select{width:auto;max-width:60%;padding:7px 8px;font-size:.88rem}
+.set.small{padding:8px 4px}
+.sets{grid-template-columns:repeat(auto-fit,minmax(70px,1fr))}
+.err{color:var(--danger);font-weight:600;margin:0}
+.btn.danger{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn.danger-outline{color:var(--danger);border-color:var(--danger)}
+.confirm{background:var(--danger-soft);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.confirm p{margin:0}
+tr.click{cursor:pointer}
+tr.click:hover td,tr.click:focus td{background:var(--accent-soft)}
+tr.click:focus{outline:none}
+.lv{color:var(--muted)}
+@media (max-width:380px){.grid3{grid-template-columns:1fr 1fr 1fr;gap:6px}}
 @media (prefers-reduced-motion:no-preference){.set,nav button{transition:background .15s,color .15s}}
 </style>
 <style>[hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;-webkit-tap-highlight-color:transparent}</style>
@@ -121,20 +146,20 @@ td.cur{background:var(--accent-soft);color:var(--accent);font-weight:600;border-
 </div>
 
 <script>
-const EX = [
-  {id:"pompes", name:"Pompes", unit:"reps", rest:60, levels:[
+const BUILTIN = [
+  {id:"pompes", name:"Pompes", unit:"reps", sets:3, rest:60, levels:[
     {t:"3 × 8", n:"sur les genoux"},{t:"3 × 12", n:"sur les genoux"},{t:"3 × 20", n:"sur les genoux"},
     {t:"3 × 8", n:"classiques"},{t:"3 × 12", n:"classiques"},{t:"3 × 20", n:"classiques"}],
    how:["Mains un peu plus larges que les épaules, corps gainé de la tête aux genoux (ou aux pieds).","Descends la poitrine près du sol en gardant les coudes à environ 45° du corps.","Souffle en poussant. Ne laisse pas le bassin s'affaisser."]},
-  {id:"squats", name:"Squats", unit:"reps", rest:60, levels:[{t:"3 × 15"},{t:"3 × 25"},{t:"3 × 35"}],
+  {id:"squats", name:"Squats", unit:"reps", sets:3, rest:60, levels:[{t:"3 × 15"},{t:"3 × 25"},{t:"3 × 35"}],
    how:["Pieds largeur d'épaules, pointes légèrement ouvertes.","Envoie les fesses en arrière, dos droit, genoux dans l'axe des pieds.","Descends jusqu'à cuisses parallèles au sol, remonte en soufflant."]},
-  {id:"superman", name:"Superman", unit:"reps", rest:45, levels:[{t:"3 × 8"},{t:"3 × 12"},{t:"3 × 15"}],
+  {id:"superman", name:"Superman", unit:"reps", sets:3, rest:45, levels:[{t:"3 × 8"},{t:"3 × 12"},{t:"3 × 15"}],
    how:["À plat ventre, bras tendus devant, jambes tendues, regard vers le sol.","Décolle bras, poitrine et jambes de 5 à 10 cm seulement, en même temps.","Tiens 2 s en t'allongeant, redescends en 2 s. Souffle en montant.","Trop dur : bras droit + jambe gauche, puis l'inverse. Douleur vive au dos : stop."]},
-  {id:"curl", name:"Curl isométrique", unit:"sec", rest:45, perSide:"par bras", levels:[{t:"3 × 15 s",s:15},{t:"3 × 25 s",s:25},{t:"3 × 40 s",s:40}],
+  {id:"curl", name:"Curl isométrique", unit:"sec", sets:3, rest:45, perSide:"par bras", levels:[{t:"3 × 15 s",s:15},{t:"3 × 25 s",s:25},{t:"3 × 40 s",s:40}],
    how:["Bras plié à 90°, paume vers le haut, coude collé au corps.","L'autre main sur le poignet : le bras pousse vers le haut, la main résiste. Rien ne bouge.","Pousse à 70-80 % de ta force en respirant normalement, puis change de bras.","Bras droit puis gauche = 1 série."]},
-  {id:"planche", name:"Planche", unit:"sec", rest:40, levels:[{t:"3 × 20 s",s:20},{t:"3 × 40 s",s:40},{t:"3 × 60 s",s:60}],
+  {id:"planche", name:"Planche", unit:"sec", sets:3, rest:40, levels:[{t:"3 × 20 s",s:20},{t:"3 × 40 s",s:40},{t:"3 × 60 s",s:60}],
    how:["Sur les avant-bras, coudes sous les épaules.","Corps aligné, ventre et fessiers serrés, bassin ni trop haut ni trop bas.","Respire calmement, ne bloque pas ta respiration."]},
-  {id:"lateral", name:"Gainage latéral", unit:"sec", rest:40, perSide:"par côté", levels:[{t:"3 × 15 s",s:15},{t:"3 × 30 s",s:30},{t:"3 × 45 s",s:45}],
+  {id:"lateral", name:"Gainage latéral", unit:"sec", sets:3, rest:40, perSide:"par côté", levels:[{t:"3 × 15 s",s:15},{t:"3 × 30 s",s:30},{t:"3 × 45 s",s:45}],
    how:["Sur un avant-bras, coude sous l'épaule, pieds empilés (ou genoux au sol pour faciliter).","Hanches hautes, corps en ligne droite.","Côté droit puis côté gauche = 1 série."]}
 ];
 
@@ -142,33 +167,56 @@ const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2,"0");
 const dayKey = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const TODAY = dayKey(new Date());
+const fmtDate = d => new Date(d+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"short", day:"numeric", month:"short"});
+const fmtLong = d => new Date(d+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"long", day:"numeric", month:"long", year:"numeric"});
 
-let state = { levels:{}, sessions:[] };
-EX.forEach(e => state.levels[e.id] = 1);
-let draft = {};          // {exId:[bool,bool,bool]}
-let store = null;        // {saveLevels, saveSession}
+let state = { levels:{}, sessions:[], custom:[] };
+let draft = {};
 let justSaved = false;
+let editing = null;      // séance en cours de saisie manuelle
+let delConfirm = false;
+let exForm = null;       // exercice en cours de création / modification
+let exDelConfirm = null;
 
 function ls(k, v){ try{ if(v===undefined){ const r=localStorage.getItem(k); return r?JSON.parse(r):null } localStorage.setItem(k, JSON.stringify(v)) }catch(e){ return null } }
+function persist(){ ls("renfo-levels", state.levels); ls("renfo-sessions", state.sessions); ls("renfo-custom", state.custom) }
 
+/* ---------- Exercices ---------- */
+function customToEx(c){
+  const suf = c.unit==="sec" ? " s" : "";
+  return {id:c.id, name:c.name, unit:c.unit, sets:c.sets, rest:c.rest, perSide:c.perSide||"", custom:true,
+    levels:c.targets.map(v=>({t:c.sets+" × "+v+suf, s:c.unit==="sec"?v:undefined})), how:c.how||[]};
+}
+function allEx(){ return BUILTIN.concat(state.custom.map(customToEx)) }
+function exById(id){ return allEx().find(e=>e.id===id) }
+function lvlOf(e){ const l = state.levels[e.id] || 1; return Math.min(l, e.levels.length) }
+function emptySets(e){ return Array(e.sets).fill(false) }
+
+/* ---------- Chargement ---------- */
+function loadState(){
+  const lv = ls("renfo-levels"); if(lv) state.levels = lv;
+  state.sessions = ls("renfo-sessions") || [];
+  state.custom = ls("renfo-custom") || [];
+}
 function loadDraft(){
   const d = ls("renfo-draft");
   draft = (d && d.day===TODAY) ? d.sets : {};
-  const todaySess = state.sessions.find(s => s.date===TODAY);
-  if(!d || d.day!==TODAY){ if(todaySess){ EX.forEach(e=>{ if(todaySess.results[e.id]) draft[e.id]=todaySess.results[e.id].sets.slice() }) } }
-  EX.forEach(e => { if(!draft[e.id]) draft[e.id]=[false,false,false] });
+  if(!d || d.day!==TODAY){
+    const s = state.sessions.find(x=>x.date===TODAY);
+    if(s) for(const id in s.results) draft[id] = s.results[id].sets.slice();
+  }
+  allEx().forEach(e=>{ if(!draft[e.id] || draft[e.id].length!==e.sets) draft[e.id] = emptySets(e) });
 }
 function saveDraft(){ ls("renfo-draft", {day:TODAY, sets:draft}) }
 
-/* ---------- Stockage ---------- */
-async function initStore(){
-  const lv = ls("renfo-levels"); if(lv) Object.assign(state.levels, lv);
-  state.sessions = ls("renfo-sessions") || [];
-  store = {
-    async saveLevels(){ ls("renfo-levels", state.levels) },
-    async saveSession(s){ state.sessions = state.sessions.filter(x=>x.date!==s.date).concat(s); ls("renfo-sessions", state.sessions) }
-  };
-  $("storeNote").textContent = "Tes séances sont enregistrées sur ce téléphone. Pense à faire une sauvegarde de temps en temps (onglet Historique).";
+function putSession(s){
+  state.sessions = state.sessions.filter(x=>x.date!==s.date).concat(s);
+  persist();
+  if(s.date===TODAY){ for(const id in s.results) draft[id]=s.results[id].sets.slice(); saveDraft() }
+}
+function removeSession(date){
+  state.sessions = state.sessions.filter(x=>x.date!==date); persist();
+  if(date===TODAY){ ls("renfo-draft", null); draft={}; loadDraft() }
 }
 
 /* ---------- Calculs ---------- */
@@ -181,12 +229,12 @@ function streak(){
 }
 function thisWeek(){
   const d = new Date(); const dow = (d.getDay()+6)%7; d.setDate(d.getDate()-dow);
-  const start = dayKey(d); return state.sessions.filter(s=>s.date>=start).length;
+  const start = dayKey(d); return state.sessions.filter(s=>s.date>=start && s.date<=TODAY).length;
 }
 function readyToLevelUp(e){
-  const lvl = state.levels[e.id]; if(lvl >= e.levels.length) return false;
+  const lvl = lvlOf(e); if(lvl >= e.levels.length) return false;
   const last = sortedSessions().filter(s=>s.results && s.results[e.id]).slice(0,2);
-  return last.length===2 && last.every(s => s.results[e.id].level===lvl && s.results[e.id].sets.every(Boolean));
+  return last.length===2 && last.every(s => s.results[e.id].level===lvl && s.results[e.id].sets.length && s.results[e.id].sets.every(Boolean));
 }
 
 /* ---------- Minuteur ---------- */
@@ -209,72 +257,182 @@ $("timerAdd").onclick = ()=>{ tEnd += 15000; clearInterval(tInt); tInt=setInterv
 
 /* ---------- Rendu ---------- */
 function el(tag, attrs={}, ...kids){ const n=document.createElement(tag);
-  for(const k in attrs){ if(k==="class") n.className=attrs[k]; else if(k.startsWith("on")) n[k]=attrs[k]; else n.setAttribute(k, attrs[k]) }
-  kids.flat().forEach(c=> n.append(c && c.nodeType ? c : document.createTextNode(c ?? ""))); return n }
+  for(const k in attrs){ const v=attrs[k]; if(v===undefined||v===null||v===false) continue;
+    if(k==="class") n.className=v; else if(k.startsWith("on")) n[k]=v; else if(k==="value") n.value=v; else n.setAttribute(k, v===true?"":v) }
+  kids.flat().forEach(c=>{ if(c===null||c===undefined||c===false) return; n.append(c.nodeType ? c : document.createTextNode(c)) }); return n }
+const howList = e => e.how && e.how.length ? el("details",{}, el("summary",{}, "Comment le faire"), el("ul",{}, e.how.map(h=>el("li",{},h)))) : null;
 
 function renderJour(){
   const v = $("v-jour"); v.replaceChildren();
-  const ups = EX.filter(readyToLevelUp);
-  ups.forEach(e=>{
-    const next = state.levels[e.id]+1, L = e.levels[next-1];
+  allEx().filter(readyToLevelUp).forEach(e=>{
+    const next = lvlOf(e)+1, L = e.levels[next-1];
     v.append(el("div",{class:"banner"},
-      el("p",{}, el("strong",{}, e.name+" : "), "tu as réussi tes 3 séries deux fois de suite. Prêt pour "+L.t+(L.n?" ("+L.n+")":"")+" ?"),
-      el("div",{class:"actions"}, el("button",{class:"btn primary", onclick:async()=>{ state.levels[e.id]=next; await store.saveLevels(); renderAll() }}, "Passer au niveau "+next))));
+      el("p",{}, el("strong",{}, e.name+" : "), "tu as réussi toutes tes séries deux fois de suite. Prêt pour "+L.t+(L.n?" ("+L.n+")":"")+" ?"),
+      el("div",{class:"actions"}, el("button",{class:"btn primary", onclick:()=>{ state.levels[e.id]=next; persist(); renderAll() }}, "Passer au niveau "+next))));
   });
-  EX.forEach(e=>{
-    const lvl = state.levels[e.id], L = e.levels[lvl-1], sets = draft[e.id], all = sets.every(Boolean);
-    const card = el("article",{class:"card"+(all?" done":"")},
+  allEx().forEach(e=>{
+    const lvl = lvlOf(e), L = e.levels[lvl-1], sets = draft[e.id], all = sets.every(Boolean);
+    v.append(el("article",{class:"card"+(all?" done":"")},
       el("div",{class:"row"}, el("div",{class:"name"}, e.name), el("span",{class:"chip"+(all?" ok":"")}, all ? "Fait" : "Niveau "+lvl)),
       el("div",{class:"target"}, L.t, el("small",{}, [L.n, e.perSide].filter(Boolean).join(" · "))),
       el("div",{class:"sets"}, sets.map((on,i)=> el("button",{class:"set","aria-pressed":String(on), onclick:()=>{
         draft[e.id][i]=!draft[e.id][i]; saveDraft();
-        if(draft[e.id][i] && i<2) startTimer(e.rest, "Repos · "+e.name);
+        if(draft[e.id][i] && i<sets.length-1) startTimer(e.rest, "Repos · "+e.name);
         justSaved=false; renderJour() }}, "Série "+(i+1)))),
       el("div",{class:"actions"},
-        e.unit==="sec" ? el("button",{class:"btn", onclick:()=>startTimer(L.s, "Effort · "+e.name)}, "Chrono "+L.s+" s") : null,
+        e.unit==="sec" && L.s ? el("button",{class:"btn", onclick:()=>startTimer(L.s, "Effort · "+e.name)}, "Chrono "+L.s+" s") : null,
         el("button",{class:"btn", onclick:()=>startTimer(e.rest, "Repos · "+e.name)}, "Repos "+e.rest+" s")),
-      el("details",{}, el("summary",{}, "Comment le faire"), el("ul",{}, e.how.map(h=>el("li",{},h)))));
-    v.append(card);
+      howList(e)));
   });
   const already = state.sessions.some(s=>s.date===TODAY);
-  v.append(el("button",{class:"btn primary big", onclick:saveSession}, already ? "Mettre à jour la séance du jour" : "Enregistrer la séance"));
+  v.append(el("button",{class:"btn primary big", onclick:saveToday}, already ? "Mettre à jour la séance du jour" : "Enregistrer la séance"));
   if(justSaved) v.append(el("p",{class:"saved"}, "Séance enregistrée."));
   v.append(el("p",{class:"note"}, "Coche chaque série terminée : le minuteur de repos se lance tout seul. Garde 1 jour de repos par semaine, et un de plus si tu as des courbatures marquées ou une gêne aux poignets ou aux épaules."));
 }
 
-async function saveSession(){
+function saveToday(){
   const results = {};
-  EX.forEach(e=>{ if(draft[e.id].some(Boolean)) results[e.id] = {level:state.levels[e.id], sets:draft[e.id].slice()} });
-  if(!Object.keys(results).length){ justSaved=false; $("storeNote").textContent="Coche au moins une série avant d'enregistrer."; return }
-  const s = {date:TODAY, results, savedAt:new Date().toISOString()};
-  try{ await store.saveSession(s); if(!state.sessions.some(x=>x.date===TODAY)) state.sessions.push(s); else state.sessions = state.sessions.map(x=>x.date===TODAY?s:x); justSaved=true }
-  catch(e){ $("storeNote").textContent="L'enregistrement a échoué. Vérifie ta connexion et réessaie." }
-  renderAll();
+  allEx().forEach(e=>{ if(draft[e.id].some(Boolean)) results[e.id] = {level:lvlOf(e), sets:draft[e.id].slice()} });
+  if(!Object.keys(results).length){ justSaved=false; note("Coche au moins une série avant d'enregistrer."); return }
+  putSession({date:TODAY, results, savedAt:new Date().toISOString()});
+  justSaved=true; renderAll();
+}
+function note(t){ $("storeNote").textContent = t }
+
+/* ---------- Programme + exercices perso ---------- */
+function blankExForm(){ return {id:null, name:"", unit:"reps", sets:3, l1:"", l2:"", l3:"", rest:60, side:"", how:"", err:""} }
+function exFormFrom(c){ return {id:c.id, name:c.name, unit:c.unit, sets:c.sets, l1:c.targets[0]??"", l2:c.targets[1]??"", l3:c.targets[2]??"", rest:c.rest, side:c.perSide||"", how:(c.how||[]).join("\n"), err:""} }
+
+function field(label, input){ return el("label",{class:"field"}, el("span",{}, label), input) }
+function bind(key, attrs){ return el("input", Object.assign({value:exForm[key], oninput:ev=>{ exForm[key]=ev.target.value }}, attrs)) }
+
+function renderExForm(){
+  const f = exForm;
+  const unitSel = el("select",{id:"cxUnit", onchange:ev=>{ f.unit=ev.target.value; renderProg() }},
+    el("option",{value:"reps"},"Répétitions"), el("option",{value:"sec"},"Secondes (exercice tenu)"));
+  unitSel.value = f.unit;
+  const u = f.unit==="sec" ? "secondes" : "répétitions";
+  return el("article",{class:"card form"},
+    el("div",{class:"name"}, f.id ? "Modifier l'exercice" : "Nouvel exercice"),
+    field("Nom", bind("name",{id:"cxName", type:"text", placeholder:"Ex. : Fentes alternées", maxlength:"40"})),
+    el("div",{class:"grid2"},
+      field("Type", unitSel),
+      field("Séries", bind("sets",{id:"cxSets", type:"number", min:"1", max:"10", inputmode:"numeric"}))),
+    el("div",{class:"grid3"},
+      field("Niveau 1 ("+u+")", bind("l1",{id:"cxL1", type:"number", min:"1", inputmode:"numeric", placeholder:"10"})),
+      field("Niveau 2", bind("l2",{id:"cxL2", type:"number", min:"1", inputmode:"numeric", placeholder:"15"})),
+      field("Niveau 3", bind("l3",{id:"cxL3", type:"number", min:"1", inputmode:"numeric", placeholder:"20"}))),
+    el("div",{class:"grid2"},
+      field("Repos entre séries (s)", bind("rest",{id:"cxRest", type:"number", min:"0", inputmode:"numeric"})),
+      field("Précision (facultatif)", bind("side",{id:"cxSide", type:"text", placeholder:"par jambe, par côté…", maxlength:"30"}))),
+    field("Consignes (facultatif, une par ligne)", el("textarea",{id:"cxHow", rows:"3", value:f.how, oninput:ev=>{ f.how=ev.target.value }})),
+    f.err ? el("p",{class:"err"}, f.err) : null,
+    el("div",{class:"actions"},
+      el("button",{class:"btn primary", onclick:saveExForm}, f.id ? "Enregistrer les modifications" : "Ajouter au programme"),
+      el("button",{class:"btn", onclick:()=>{ exForm=null; renderProg() }}, "Annuler")));
+}
+
+function saveExForm(){
+  const f = exForm;
+  const name = String(f.name).trim(), sets = parseInt(f.sets,10), rest = parseInt(f.rest,10);
+  const targets = [f.l1,f.l2,f.l3].map(x=>parseInt(x,10)).filter(n=>n>0);
+  if(!name){ f.err="Donne un nom à l'exercice."; return renderProg() }
+  if(!(sets>=1 && sets<=10)){ f.err="Indique un nombre de séries entre 1 et 10."; return renderProg() }
+  if(!targets.length){ f.err="Indique au moins l'objectif du niveau 1."; return renderProg() }
+  const c = {id: f.id || "c-"+Date.now().toString(36), name, unit:f.unit, sets, rest: rest>=0?rest:60,
+    perSide:String(f.side).trim(), targets, how:String(f.how).split("\n").map(s=>s.trim()).filter(Boolean)};
+  if(f.id) state.custom = state.custom.map(x=>x.id===f.id?c:x); else { state.custom.push(c); state.levels[c.id]=1 }
+  persist(); exForm=null; loadDraft(); note("« "+name+" » "+(f.id?"modifié.":"ajouté à ton programme.")); renderAll();
 }
 
 function renderProg(){
   const v = $("v-prog"); v.replaceChildren();
-  v.append(el("p",{class:"note"}, "3 séries par exercice. Passe au niveau suivant quand tu réussis les 3 séries proprement deux séances de suite. Touche un niveau pour le choisir toi-même."));
-  EX.forEach(e=>{
-    const lvl = state.levels[e.id];
-    v.append(el("article",{class:"card"},
-      el("div",{class:"row"}, el("div",{class:"name"}, e.name), el("span",{class:"chip"}, "Repos "+e.rest+" s")),
-      el("div",{class:"levelpick"}, e.levels.map((L,i)=> el("button",{"aria-pressed":String(lvl===i+1), onclick:async()=>{ state.levels[e.id]=i+1; await store.saveLevels(); renderAll() }},
-        "Niv. "+(i+1)+" · "+L.t+(L.n?" "+(L.n==="sur les genoux"?"(genoux)":""):"")))),
-      el("details",{}, el("summary",{}, "Comment le faire"), el("ul",{}, e.how.map(h=>el("li",{},h))))));
+  v.append(el("p",{class:"note"}, "Passe au niveau suivant quand tu réussis toutes les séries proprement deux séances de suite. Touche un niveau pour le choisir toi-même."));
+  if(exForm) v.append(renderExForm());
+  else v.append(el("button",{class:"btn primary big", onclick:()=>{ exForm=blankExForm(); renderProg(); setTimeout(()=>$("cxName")&&$("cxName").focus(),0) }}, "+ Ajouter un exercice"));
+  allEx().forEach(e=>{
+    const lvl = lvlOf(e);
+    const card = el("article",{class:"card"},
+      el("div",{class:"row"}, el("div",{class:"name"}, e.name), el("span",{class:"chip"}, (e.custom?"Perso · ":"")+"Repos "+e.rest+" s")),
+      el("div",{class:"levelpick"}, e.levels.map((L,i)=> el("button",{"aria-pressed":String(lvl===i+1), onclick:()=>{ state.levels[e.id]=i+1; persist(); renderAll() }},
+        "Niv. "+(i+1)+" · "+L.t+(L.n==="sur les genoux"?" (genoux)":"")))),
+      howList(e));
+    if(e.custom){
+      const c = state.custom.find(x=>x.id===e.id);
+      card.append(exDelConfirm===e.id
+        ? el("div",{class:"confirm"}, el("p",{}, "Supprimer « "+e.name+" » du programme ? Les séances passées gardent leurs résultats."),
+            el("div",{class:"actions"},
+              el("button",{class:"btn danger", onclick:()=>{ state.custom=state.custom.filter(x=>x.id!==e.id); delete state.levels[e.id]; exDelConfirm=null; persist(); note("Exercice supprimé."); renderAll() }}, "Oui, supprimer"),
+              el("button",{class:"btn", onclick:()=>{ exDelConfirm=null; renderProg() }}, "Annuler")))
+        : el("div",{class:"actions"},
+            el("button",{class:"btn", onclick:()=>{ exForm=exFormFrom(c); renderProg(); window.scrollTo({top:0, behavior:"smooth"}) }}, "Modifier"),
+            el("button",{class:"btn", onclick:()=>{ exDelConfirm=e.id; renderProg() }}, "Supprimer")));
+    }
+    v.append(card);
   });
+}
+
+/* ---------- Historique + séances manuelles ---------- */
+function openEditor(date){
+  const s = state.sessions.find(x=>x.date===date);
+  const results = {};
+  allEx().forEach(e=>{
+    const r = s && s.results[e.id];
+    results[e.id] = r ? {level:Math.min(r.level, e.levels.length), sets: r.sets.length===e.sets ? r.sets.slice() : emptySets(e).map((_,i)=>!!r.sets[i])}
+                      : {level:lvlOf(e), sets:emptySets(e)};
+  });
+  editing = {date, results, exists:!!s};
+  delConfirm = false;
+}
+
+function renderEditor(){
+  const ed = editing;
+  const dateIn = el("input",{id:"edDate", type:"date", max:TODAY, value:ed.date, onchange:ev=>{
+    const d = ev.target.value; if(!d) return; if(d>TODAY){ ev.target.value=ed.date; return }
+    openEditor(d); renderHist() }});
+  const rows = allEx().map(e=>{
+    const r = ed.results[e.id];
+    const sel = el("select",{"aria-label":"Niveau "+e.name, onchange:ev=>{ r.level=parseInt(ev.target.value,10); renderHist() }},
+      e.levels.map((L,i)=> el("option",{value:String(i+1)}, "Niv. "+(i+1)+" · "+L.t+(L.n==="sur les genoux"?" (genoux)":""))));
+    sel.value = String(r.level);
+    return el("div",{class:"edrow"},
+      el("div",{class:"row"}, el("strong",{}, e.name), sel),
+      el("div",{class:"sets"}, r.sets.map((on,i)=> el("button",{class:"set small","aria-pressed":String(on), onclick:()=>{ r.sets[i]=!r.sets[i]; renderHist() }}, "S"+(i+1)))));
+  });
+  return el("article",{class:"card form"},
+    el("div",{class:"name"}, ed.exists ? "Modifier une séance" : "Ajouter une séance"),
+    field("Date", dateIn),
+    ed.exists ? el("p",{class:"note"}, "Une séance existe déjà le "+fmtLong(ed.date)+" : tu la modifies.") : null,
+    el("p",{class:"note"}, "Pour chaque exercice, choisis le niveau et touche les séries réussies."),
+    rows,
+    el("div",{class:"actions"},
+      el("button",{class:"btn primary", onclick:saveEditor}, "Enregistrer"),
+      el("button",{class:"btn", onclick:()=>{ editing=null; renderHist() }}, "Annuler"),
+      ed.exists && !delConfirm ? el("button",{class:"btn danger-outline", onclick:()=>{ delConfirm=true; renderHist() }}, "Supprimer la séance") : null),
+    delConfirm ? el("div",{class:"confirm"}, el("p",{}, "Supprimer définitivement la séance du "+fmtLong(ed.date)+" ?"),
+      el("div",{class:"actions"},
+        el("button",{class:"btn danger", onclick:()=>{ removeSession(ed.date); editing=null; note("Séance supprimée."); renderAll() }}, "Oui, supprimer"),
+        el("button",{class:"btn", onclick:()=>{ delConfirm=false; renderHist() }}, "Annuler"))) : null);
+}
+
+function saveEditor(){
+  const ed = editing, results = {};
+  for(const id in ed.results){ const r = ed.results[id]; if(r.sets.some(Boolean)) results[id] = {level:r.level, sets:r.sets.slice()} }
+  if(!Object.keys(results).length){ note("Touche au moins une série réussie avant d'enregistrer."); return }
+  putSession({date:ed.date, results, savedAt:new Date().toISOString(), manual:true});
+  note("Séance du "+fmtLong(ed.date)+" enregistrée."); editing=null; renderAll();
 }
 
 function backupCard(){
   return el("article",{class:"card"},
     el("div",{class:"name"},"Sauvegarde"),
-    el("p",{class:"note"},"Enregistre un fichier avec tes niveaux et tes séances, pour ne rien perdre si tu changes de téléphone ou effaces les données du navigateur."),
+    el("p",{class:"note"},"Enregistre un fichier avec tes niveaux, tes exercices et tes séances, pour ne rien perdre si tu changes de téléphone ou effaces les données du navigateur."),
     el("div",{class:"actions"},
       el("button",{class:"btn primary", onclick:exportData},"Exporter mes données"),
       el("button",{class:"btn", onclick:()=>$("importFile").click()},"Importer une sauvegarde")));
 }
 function exportData(){
-  const blob = new Blob([JSON.stringify({app:"mon-renfo",version:1,levels:state.levels,sessions:state.sessions},null,1)],{type:"application/json"});
+  const blob = new Blob([JSON.stringify({app:"mon-renfo",version:2,levels:state.levels,sessions:state.sessions,custom:state.custom},null,1)],{type:"application/json"});
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "mon-renfo-"+TODAY+".json";
   document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
 }
@@ -282,25 +440,36 @@ function importData(file){
   const r = new FileReader();
   r.onload = () => { try{
     const d = JSON.parse(r.result); if(d.app!=="mon-renfo") throw 0;
-    Object.assign(state.levels, d.levels||{}); state.sessions = d.sessions||[];
-    ls("renfo-levels", state.levels); ls("renfo-sessions", state.sessions); loadDraft(); renderAll();
-    $("storeNote").textContent = "Sauvegarde importée : "+state.sessions.length+" séance(s).";
-  }catch(e){ $("storeNote").textContent = "Ce fichier n'est pas une sauvegarde Mon Renfo." } };
+    state.levels = Object.assign({}, d.levels||{}); state.sessions = d.sessions||[]; state.custom = d.custom||[];
+    persist(); ls("renfo-draft", null); loadDraft(); renderAll();
+    note("Sauvegarde importée : "+state.sessions.length+" séance(s), "+state.custom.length+" exercice(s) perso.");
+  }catch(e){ note("Ce fichier n'est pas une sauvegarde Mon Renfo.") } };
   r.readAsText(file);
 }
 
 function renderHist(){
   const v = $("v-hist"); v.replaceChildren();
+  if(editing) v.append(renderEditor());
+  else v.append(el("button",{class:"btn primary big", onclick:()=>{
+    const y = new Date(); y.setDate(y.getDate()-1); openEditor(dayKey(y)); renderHist() }}, "+ Ajouter une séance passée"));
   const ss = sortedSessions();
+  if(!ss.length){
+    v.append(el("div",{class:"card"}, el("p",{class:"note"}, "Aucune séance enregistrée pour l'instant. Termine ta séance dans l'onglet Aujourd'hui, ou ajoute une séance passée.")));
+  } else {
+    const exs = allEx();
+    const extra = new Set(); ss.forEach(s=>Object.keys(s.results).forEach(id=>{ if(!exById(id)) extra.add(id) }));
+    const cols = exs.map(e=>({id:e.id, label:e.name.split(" ")[0]})).concat([...extra].map(id=>({id, label:"(supprimé)"})));
+    const tbl = el("table",{}, el("thead",{}, el("tr",{}, el("th",{},"Date"), cols.map(c=>el("th",{}, c.label)))),
+      el("tbody",{}, ss.slice(0,90).map(s=> el("tr",{class:"click", tabindex:"0", title:"Modifier cette séance",
+          onclick:()=>{ openEditor(s.date); renderHist(); window.scrollTo({top:0, behavior:"smooth"}) },
+          onkeydown:ev=>{ if(ev.key==="Enter"){ openEditor(s.date); renderHist() } }},
+        el("td",{}, fmtDate(s.date)), cols.map(c=>{
+          const r = s.results[c.id]; if(!r) return el("td",{},"–");
+          return el("td",{}, el("div",{class:"dots", title:"Niveau "+r.level}, r.sets.map(o=>el("span",{class:"dot"+(o?" on":"")}))), el("small",{class:"lv"}, "N"+r.level)) })))));
+    v.append(el("div",{class:"card"}, el("div",{class:"scroll"}, tbl)));
+    v.append(el("p",{class:"note"}, "Chaque point vert est une série réussie. N indique le niveau. Touche une ligne pour modifier ou supprimer la séance."));
+  }
   v.append(backupCard());
-  if(!ss.length){ v.append(el("div",{class:"card"}, el("p",{class:"note"}, "Aucune séance enregistrée pour l'instant. Termine ta première séance dans l'onglet Aujourd'hui, puis touche « Enregistrer la séance »."))); return }
-  const fmt = d => new Date(d+"T12:00:00").toLocaleDateString("fr-FR",{weekday:"short", day:"numeric", month:"short"});
-  const tbl = el("table",{}, el("thead",{}, el("tr",{}, el("th",{},"Date"), EX.map(e=>el("th",{}, e.name.split(" ")[0])))),
-    el("tbody",{}, ss.slice(0,60).map(s=> el("tr",{}, el("td",{}, fmt(s.date)), EX.map(e=>{
-      const r = s.results[e.id]; if(!r) return el("td",{},"–");
-      return el("td",{}, el("div",{class:"dots", title:"Niveau "+r.level}, r.sets.map(o=>el("span",{class:"dot"+(o?" on":"")}))), el("small",{style:"color:var(--muted)"}, "N"+r.level)) })))));
-  v.append(el("div",{class:"card"}, el("div",{class:"scroll"}, tbl)));
-  v.append(el("p",{class:"note"}, "Chaque point vert est une série réussie. N indique le niveau du jour."));
 }
 
 function renderAll(){
@@ -311,11 +480,13 @@ function renderAll(){
 document.querySelectorAll("nav button").forEach(b=> b.onclick = ()=>{
   document.querySelectorAll("nav button").forEach(x=>x.setAttribute("aria-selected", String(x===b)));
   ["jour","prog","hist"].forEach(t=> $("v-"+t).hidden = t!==b.dataset.tab);
+  try{ sessionStorage.setItem("renfo-tab", b.dataset.tab) }catch(e){}
 });
 $("today").textContent = new Date().toLocaleDateString("fr-FR",{weekday:"long", day:"numeric", month:"long"});
-
 $("importFile").onchange = e => { if(e.target.files[0]) importData(e.target.files[0]); e.target.value="" };
-initStore().then(()=>{ loadDraft(); renderAll() });
+
+loadState(); loadDraft(); renderAll();
+note("Tes séances sont enregistrées sur ce téléphone. Pense à faire une sauvegarde de temps en temps (onglet Historique).");
 if("serviceWorker" in navigator){ window.addEventListener("load", ()=> navigator.serviceWorker.register("sw.js").catch(()=>{})) }
 </script>
 
